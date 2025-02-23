@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 let chat_context = [];
+let currentMessageElement = null;
+let currentTextElement = null;
+let isFirstAssistantChunk = true;
 
 function showTypingIndicator() {
     document.getElementById("typing-indicator").style.display = 'block'
@@ -103,42 +106,43 @@ function sendMessage(regenerate = false) {
                     sendButton.disabled = false;
                     regenerateButton.disabled = false;
                     clearChatButton.disabled = false;
+                    isFirstAssistantChunk = true;
                     return;
                 }
         
-                // Decode the raw bytes into a string
                 const chunk = decoder.decode(value, { stream: true });
-        
-                // Split the chunk into individual JSON messages (separated by newlines)
                 const lines = chunk.split('\n').filter(line => line.trim() !== '');
         
-                // Process each line as a separate JSON object
                 for (const line of lines) {
                     try {
                         const data = JSON.parse(line);
-        
-                        if (data.role === 'assistant') {
-                            // Append assistant messages to the chat
-                            appendMessage('assistant', data.content);
-                        } else if (data.role === 'user') {
-                            // Append tool results (user messages) to the chat
-                            appendMessage('user', data.content);
-                        } else if (data.role === 'tool_call') {
-                            // Append tool call messages to the chat
-                            appendMessage('tool_call', data.content);
-                        } else if (data.error) {
-                            // Handle errors
-                            console.error('Error:', data.error);
-                            appendMessage('assistant', 'An error occurred while processing your request.');
+                        
+                        // Handle different message types
+                        if (data.type === 'done') {
+                            // Finalize the current message
+                            appendMessage(data.role, '', 'done');
+                            if (data.role === 'assistant') {
+                                isFirstAssistantChunk = true;  // Reset for next assistant message
+                            }
+                        } else if (data.role === 'assistant') {
+                            // Handle streaming assistant messages
+                            let chunkType = isFirstAssistantChunk ? 'first_chunk' : 'chunk';
+                            appendMessage('assistant', data.content, chunkType);
+                            isFirstAssistantChunk = false;
+                        } else if (data.role === 'tool_call' || data.role === 'user') {
+                            // Handle non-streaming tool calls and user messages
+                            // Force these to be new messages by resetting current elements
+                            currentMessageElement = null;
+                            currentTextElement = null;
+                            appendMessage(data.role, data.content, data.type || 'regular');
                         }
                     } catch (error) {
                         console.error('Error parsing streamed message:', error, 'Chunk:', line);
                     }
                 }
         
-                // Continue reading the stream
                 return readStream(reader, decoder);
-            });
+            })
         }
     }
 }
@@ -183,61 +187,80 @@ function regenerateLastMessage() {
     sendMessage(true);
 }
 
-function appendMessage(sender, message) {
-    const chatArea = document.getElementById(`chat-area`);
-    const messageElement = document.createElement('div');
-    const typingIndicator = document.getElementById(`typing-indicator`);
+function appendMessage(sender, message, type = 'regular') {
+    const chatArea = document.getElementById('chat-area');
+    const typingIndicator = document.getElementById('typing-indicator');
     
-    messageElement.classList.add('chat-message', sender);
-    if(sender == 'assistant') {
-        const botTitle = document.createElement('div');
-        botTitle.classList.add('bot-title');
+    // Create new message element for:
+    // 1. First chunks of streaming messages
+    // 2. Regular (non-streaming) messages
+    // 3. Force new message for tool calls and user messages
+    if (type === 'first_chunk' || 
+        type === 'regular' || 
+        (sender === 'tool_call' || sender === 'user')) {
         
-        const botImage = document.createElement('i');
-        botImage.classList = 'bot-logo bi bi-gear-wide-connected';
-        botTitle.appendChild(botImage);
-
-        messageElement.appendChild(botTitle);
-    }
-    else if(sender == 'tool_call') {
-        const botTitle = document.createElement('div');
-        botTitle.classList.add('bot-title');
+        currentMessageElement = document.createElement('div');
+        currentMessageElement.classList.add('chat-message', sender);
         
-        const botImage = document.createElement('i');
-        botImage.classList = 'bot-logo bi bi-tools';
-        botTitle.appendChild(botImage);
+        // Add the appropriate title/icon based on sender
+        if (sender === 'assistant') {
+            const botTitle = document.createElement('div');
+            botTitle.classList.add('bot-title');
+            const botImage = document.createElement('i');
+            botImage.classList = 'bot-logo bi bi-gear-wide-connected';
+            botTitle.appendChild(botImage);
+            currentMessageElement.appendChild(botTitle);
+        } else if (sender === 'tool_call') {
+            const botTitle = document.createElement('div');
+            botTitle.classList.add('bot-title');
+            const botImage = document.createElement('i');
+            botImage.classList = 'bot-logo bi bi-tools';
+            botTitle.appendChild(botImage);
+            currentMessageElement.appendChild(botTitle);
+        } else {
+            const userTitle = document.createElement('div');
+            userTitle.classList.add('user-title');
+            const userImage = document.createElement('i');
+            userImage.classList = 'user-logo bi bi-person-circle';
+            userTitle.appendChild(userImage);
+            currentMessageElement.appendChild(userTitle);
+        }
 
-        messageElement.appendChild(botTitle);
+        currentTextElement = document.createElement('div');
+        currentMessageElement.appendChild(currentTextElement);
+        chatArea.insertBefore(currentMessageElement, typingIndicator);
     }
-    else {
-        const userTitle = document.createElement('div');
-        userTitle.classList.add('user-title');
-        
-        // const userName = document.createElement('span');
-        // userName.textContent = 'User';
-        // userName.classList = 'user-title'
 
-        const userImage = document.createElement('i');
-        userImage.classList = 'user-logo bi bi-person-circle';
-        userTitle.appendChild(userImage);
-
-        messageElement.appendChild(userTitle);
+    // Handle the message content
+    if (type === 'chunk' || type === 'first_chunk') {
+        // For streaming chunks, append to existing content
+        let currentContent = currentTextElement.innerHTML;
+        let newContent = message.replace(/\n/g, '<br>');
+        currentTextElement.innerHTML = currentContent + newContent;
+    } else if (type === 'done') {
+        // When streaming is complete, add to chat context and reset current elements
+        if (currentTextElement) {
+            chat_context.push({ 
+                role: sender === 'assistant' ? 'assistant' : 'user', 
+                content: currentTextElement.textContent 
+            });
+        }
+        currentMessageElement = null;
+        currentTextElement = null;
+    } else {
+        // For non-streaming messages (tool calls and regular messages)
+        currentTextElement.innerHTML = message.replace(/\n/g, '<br>');
+        chat_context.push({ 
+            role: sender === 'assistant' ? 'assistant' : 'user', 
+            content: message 
+        });
+        currentMessageElement = null;
+        currentTextElement = null;
     }
 
-    //messageElement.textContent += message;
-    const textElement = document.createElement('div');
-    textElement.textContent = message;
-    messageElement.appendChild(textElement);
-
-    textElement.innerHTML = message.replace(/\n/g, '<br>');
-
-    chatArea.appendChild(messageElement);
-    chatArea.insertBefore(messageElement, typingIndicator);
-    scrollToBottom() 
-
-    // Add message to chat context
-    chat_context.push({ role: sender === 'assistant' ? 'assistant' : 'user', content: message });
+    scrollToBottom();
 }
+
 
 function clearChatHistory() {
     if (confirm("Are you sure you want to clear the chat history? This action cannot be undone.")) {

@@ -52,34 +52,35 @@ def inference_loop(messages):
         response = client.chat.completions.create(
             model="qwen-max-latest",
             messages=messages,
+            stream=True
         )
 
-        # Extract the assistant's response
-        assistant_response = response.choices[0].message.content
-        print("Assistant Response:", assistant_response)
+        # # Extract the assistant's response
+        # assistant_response = response.choices[0].message.content
+        # print("Assistant Response:", assistant_response)
+        # messages.append({"role": "assistant", "content": assistant_response})
+        # yield json.dumps({'role': 'assistant', 'content': assistant_response}) + "\n"
+
+        # FULL STREAMING CODE STUB
+        assistant_response = ""
+
+        # Iterate through the streaming response
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                # Get the text chunk
+                content = chunk.choices[0].delta.content
+                
+                # Accumulate the full response
+                assistant_response += content
+                
+                # Stream the chunk to the frontend
+                yield json.dumps({'role': 'assistant', 'content': content, 'type': 'chunk'}) + "\n"
+
+        # After streaming is complete, add the full response to messages
         messages.append({"role": "assistant", "content": assistant_response})
-        yield json.dumps({'role': 'assistant', 'content': assistant_response}) + "\n"
 
-        ## FULL STREAMING CODE STUB
-        # full_response = ""
-
-        # # Iterate through the streaming response
-        # for chunk in response:
-        #     if chunk.choices[0].delta.content is not None:
-        #         # Get the text chunk
-        #         content = chunk.choices[0].delta.content
-                
-        #         # Accumulate the full response
-        #         full_response += content
-                
-        #         # Stream the chunk to the frontend
-        #         yield json.dumps({'role': 'assistant', 'content': content, 'type': 'chunk'}) + "\n"
-
-        # # After streaming is complete, add the full response to messages
-        # messages.append({"role": "assistant", "content": full_response})
-
-        # # Send a completion signal
-        # yield json.dumps({'role': 'assistant', 'content': '', 'type': 'done'}) + "\n"
+        # Send a completion signal
+        yield json.dumps({'role': 'assistant', 'content': '', 'type': 'done'}) + "\n"
 
 
         occurrences = assistant_response.count("[[qwen-tool-start]]")
@@ -87,6 +88,7 @@ def inference_loop(messages):
             #Multiple tool calls are not allowed
             ToolErrorMsg="Tool Call Error: Multiple tool calls found. Please only use one tool at a time."
             yield json.dumps({'role': 'tool_call', 'content': ToolErrorMsg}) + "\n"
+
             messages.append({"role": "user", "content": ToolErrorMsg})
             print(ToolErrorMsg)
         elif occurrences == 1:
@@ -98,7 +100,7 @@ def inference_loop(messages):
 
             if tool_call_data:
                 # Stream the tool call message back to the frontend
-                yield json.dumps({'role': 'tool_call', 'content': f"Tool call: {tool_call_data}"}) + "\n"
+                # yield json.dumps({'role': 'tool_call', 'content': f"Tool call: {tool_call_data}"}) + "\n"
 
                 # Execute the tool with the provided parameters
                 tool_name = tool_call_data["name"]
@@ -115,6 +117,7 @@ def inference_loop(messages):
 
                 # Stream the tool result back to the frontend
                 yield json.dumps({'role': 'tool_call', 'content': tool_message}) + "\n"
+
         else:
             # If no tool call, terminate the loop
             break
