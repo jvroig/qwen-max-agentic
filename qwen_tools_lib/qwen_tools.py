@@ -91,13 +91,13 @@ When you want to use a tool, make a tool call (no explanations) using this exact
 
 ```
 [[qwen-tool-start]]
-{{
+{
     "name": "tool_name",
-    "input": {{
+    "input": {
         "param1": "value1",
         "param2": "value2"
-    }}
-}}
+    }
+}
 [[qwen-tool-end]]
 ```
 
@@ -109,10 +109,10 @@ User: What is your current working directory?
 Qwen-Max:
 ```
 [[qwen-tool-start]]
-{{
+{
     "name": "get_cwd",
     "input": ""
-}}
+}
 [[qwen-tool-end]]
 ```
 **********************
@@ -124,12 +124,12 @@ User: List the files in your current working directory.
 Qwen-Max:
 ```
 [[qwen-tool-start]]
-{{
+{
     "name": "list_directory",
-    "input": {{
+    "input": {
         "path": "."
-    }}
-}}
+    }
+}
 [[qwen-tool-end]]
 ```
 **********************

@@ -15,6 +15,7 @@ CORS(app)
 load_dotenv()
 api_key = os.getenv('DASHSCOPE_API_KEY')
 base_url = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+base_url = "http://127.0.0.1:8080"
 
 @app.route('/api/chat', methods=['POST'])
 def query_endpoint():
@@ -95,8 +96,11 @@ def inference_loop(messages):
             tool_call_data = None
             try:
                 tool_call_data = parse_tool_call(assistant_response)
-            except ValueError as e:
-                print(f"No valid tool call found: {e}")
+            except:
+                print(f"No valid tool call found")
+                tool_message = f"Tool result: No valid tool call found. Please make sure tool request is valid JSON!"
+                messages.append({"role": "user", "content": tool_message})
+                yield json.dumps({'role': 'tool_call', 'content': tool_message}) + "\n"
 
             if tool_call_data:
                 # Stream the tool call message back to the frontend
@@ -177,12 +181,16 @@ def parse_tool_call(response):
         # Validate the structure of the tool call
         if "name" not in tool_call_data:
             raise ValueError("Tool call must include a 'name' field.")
-        
+
         return tool_call_data
-    
+
     except json.JSONDecodeError as e:
         print(f"Failed to parse tool call JSON: {e}. Please make sure the tool call is valid JSON")
-
+        raise
+    
+    except ValueError as e:
+        print(f"Value Error: {e}.")
+        raise
 
 def execute_tool(tool_name, tool_input):
     """
