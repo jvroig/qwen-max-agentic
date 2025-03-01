@@ -107,6 +107,7 @@ function sendMessage(regenerate = false) {
                     regenerateButton.disabled = false;
                     clearChatButton.disabled = false;
                     isFirstAssistantChunk = true;
+                    userInput.focus();
                     return;
                 }
         
