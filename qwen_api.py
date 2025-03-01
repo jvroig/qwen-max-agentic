@@ -219,7 +219,10 @@ def execute_tool(tool_name, tool_input):
 
     try:
         # Execute the tool function with the provided input
-        result = tool(**tool_input)
+        if tool_input == "":
+            result = tool()
+        else:
+            result = tool(**tool_input)
         return result
     except Exception as e:
         raise ValueError(f"Error executing tool '{tool_name}': {e}")
