@@ -179,8 +179,9 @@ def git_show(commit_hash: str, path: str = ".") -> str:
         str: JSON string containing detailed commit information, or an error message if the operation fails
     """
     try:
-        # Get commit metadata
-        meta_cmd = ["git", "-C", path, "show", "-s", "--format={\n  \"hash\": \"%H\",\n  \"author\": \"%an\",\n  \"date\": \"%ai\",\n  \"message\": \"%B\"\n}", commit_hash]
+        # Get commit metadata as separate fields
+        meta_cmd = ["git", "-C", path, "show", "-s", 
+                   "--format=%H%n%an%n%ai%n%B", commit_hash]
         
         meta_result = subprocess.run(meta_cmd, capture_output=True, text=True)
         
@@ -190,7 +191,15 @@ def git_show(commit_hash: str, path: str = ".") -> str:
         
         if meta_result.returncode == 0 and files_result.returncode == 0:
             # Parse the metadata
-            commit_info = json.loads(meta_result.stdout)
+            meta_parts = meta_result.stdout.split('\n', 3)
+            
+            # Create commit info dict manually to avoid JSON parsing issues
+            commit_info = {
+                "hash": meta_parts[0],
+                "author": meta_parts[1],
+                "date": meta_parts[2],
+                "message": meta_parts[3].strip() if len(meta_parts) > 3 else ""
+            }
             
             # Parse the changed files
             changed_files = []
