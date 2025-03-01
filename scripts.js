@@ -37,6 +37,14 @@ function hideTypingIndicator(id) {
     document.getElementById("typing-indicator").style.display = 'none'
 }
 
+function escapeHTML(html) {
+    return html
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+}
+
 function sendMessage(regenerate = false) {
     let chatContext = [];
     let userInput = '';
@@ -235,7 +243,7 @@ function appendMessage(sender, message, type = 'regular') {
     // Handle the message content
     if (type === 'chunk' || type === 'first_chunk') {
         // For streaming chunks, append to existing content
-        let currentContent = currentTextElement.innerHTML;
+        let currentContent = escapeHTML(currentTextElement.innerHTML);
         let newContent = message.replace(/\n/g, '<br>');
         currentTextElement.innerHTML = currentContent + newContent;
     } else if (type === 'done') {
@@ -250,7 +258,7 @@ function appendMessage(sender, message, type = 'regular') {
         currentTextElement = null;
     } else {
         // For non-streaming messages (tool calls and regular messages)
-        currentTextElement.innerHTML = message.replace(/\n/g, '<br>');
+        currentTextElement.innerHTML = escapeHTML(message.replace(/\n/g, '<br>'));
         chat_context.push({ 
             role: sender === 'assistant' ? 'assistant' : 'user', 
             content: message 
