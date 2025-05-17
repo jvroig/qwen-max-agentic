@@ -38,11 +38,22 @@ function hideTypingIndicator(id) {
 }
 
 function escapeHTML(html) {
-    return html
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    if (!html) return '';
+    
+    // Escape HTML in the remaining content
+    processedHtml = html
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    
+    // Restore whitelisted tags
+    processedHtml = processedHtml
+        .replace(/&lt;br&gt;/g, '<br>')
+        .replace(/&lt;br\/&gt;/g, '<br/>');
+    
+    return processedHtml;
 }
 
 function sendMessage(regenerate = false) {
@@ -243,8 +254,8 @@ function appendMessage(sender, message, type = 'regular') {
     // Handle the message content
     if (type === 'chunk' || type === 'first_chunk') {
         // For streaming chunks, append to existing content
-        let currentContent = escapeHTML(currentTextElement.innerHTML);
-        let newContent = message.replace(/\n/g, '<br>');
+        let currentContent = currentTextElement.innerHTML || '';
+        let newContent = escapeHTML(message.replace(/\n/g, '<br>'));
         currentTextElement.innerHTML = currentContent + newContent;
     } else if (type === 'done') {
         // When streaming is complete, add to chat context and reset current elements
@@ -253,12 +264,19 @@ function appendMessage(sender, message, type = 'regular') {
                 role: sender === 'assistant' ? 'assistant' : 'user', 
                 content: currentTextElement.textContent 
             });
+            
+            // Apply syntax highlighting after message is complete
+            applyPrismHighlighting(currentTextElement);
         }
         currentMessageElement = null;
         currentTextElement = null;
     } else {
         // For non-streaming messages (tool calls and regular messages)
         currentTextElement.innerHTML = escapeHTML(message.replace(/\n/g, '<br>'));
+        
+        // Apply syntax highlighting
+        applyPrismHighlighting(currentTextElement);
+        
         chat_context.push({ 
             role: sender === 'assistant' ? 'assistant' : 'user', 
             content: message 
@@ -268,6 +286,78 @@ function appendMessage(sender, message, type = 'regular') {
     }
 
     scrollToBottom();
+}
+
+// Function to apply Prism.js syntax highlighting
+function applyPrismHighlighting(element) {
+    if (!element) return;
+    
+    // Debug if Prism exists
+    console.log('Prism available:', typeof Prism !== 'undefined');
+    
+    if (typeof Prism === 'undefined') {
+        console.error('Prism.js not loaded!');
+        return;
+    }
+    
+    // Get the HTML content
+    let content = element.innerHTML;
+    console.log('Processing content length:', content.length);
+    
+    // Very simple approach: locate all occurrences of triple backticks
+    // This regex handles a variety of triple backtick formats
+    const tripleBacktickRegex = /```([\s\S]*?)```/g;
+    
+    // Check if we find any matches
+    const matches = Array.from(content.matchAll(tripleBacktickRegex));
+    console.log('Found triple backtick sections:', matches ? matches.length : 0);
+    
+    if (matches && matches.length > 0) {
+        // Process each match
+        matches.forEach(match => {
+            const fullMatch = match[0]; // The entire match including backticks
+            const codeContent = match[1]; // Everything between the backticks
+            
+            // Check for language indicator in first line
+            const firstLineBreak = codeContent.indexOf('\n');
+            let language = '';
+            let code = codeContent;
+            
+            if (firstLineBreak > 0) {
+                const possibleLang = codeContent.substring(0, firstLineBreak).trim();
+                // If first line is just a word (language), extract it
+                if (/^\w+$/.test(possibleLang)) {
+                    language = possibleLang;
+                    code = codeContent.substring(firstLineBreak + 1);
+                }
+            }
+            
+            // Create replacement HTML
+            const languageClass = language ? `language-${language}` : '';
+            const replacement = `<pre><code class="${languageClass}">${code}</code></pre>`;
+            
+            // Replace this instance in the content
+            content = content.replace(fullMatch, replacement);
+        });
+        
+        console.log('Content transformed with code blocks');
+        element.innerHTML = content;
+    } else {
+        console.warn('No triple backtick sections found');
+    }
+    
+    // Find all code blocks in the element
+    const codeBlocks = element.querySelectorAll('pre code');
+    console.log('Found code blocks after processing:', codeBlocks.length);
+    
+    // Apply Prism highlighting
+    codeBlocks.forEach(block => {
+        try {
+            Prism.highlightElement(block);
+        } catch (e) {
+            console.error('Error highlighting code:', e);
+        }
+    });
 }
 
 

@@ -15,7 +15,16 @@ CORS(app)
 load_dotenv()
 api_key = os.getenv('DASHSCOPE_API_KEY')
 base_url = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
-base_url = "http://127.0.0.1:8080"
+model_name = "qwen-turbo-latest"
+
+# api_key = "sekrit"
+# base_url = "http://127.0.0.1:8080/v1"
+# model_name = "Qwen/Qwen3-4B"
+
+# api_key   = os.getenv('BEDROCK_PROXY_API_KEY')
+# base_url  = "http://54.255.252.95:8069/api/v1"
+#model_name = "us.amazon.nova-pro-v1:0"
+#model_name = "us.meta.llama3-3-70b-instruct-v1:0"
 
 @app.route('/api/chat', methods=['POST'])
 def query_endpoint():
@@ -51,9 +60,9 @@ def inference_loop(messages):
             base_url=base_url
         )
         response = client.chat.completions.create(
-            model="qwen-max-latest",
+            model=model_name,
             messages=messages,
-            stream=True
+            stream=True,
         )
 
         # # Extract the assistant's response
@@ -64,6 +73,8 @@ def inference_loop(messages):
 
         # FULL STREAMING CODE STUB
         assistant_response = ""
+
+        print(response)
 
         # Iterate through the streaming response
         for chunk in response:
@@ -98,7 +109,7 @@ def inference_loop(messages):
                 tool_call_data = parse_tool_call(assistant_response)
             except:
                 print(f"No valid tool call found")
-                tool_message = f"Tool result: No valid tool call found. Please make sure tool request is valid JSON!"
+                tool_message = f"Tool result: No valid tool call found. Please make sure tool request is valid JSON, and escape necessary characters. Try again with better-formatted JSON"
                 messages.append({"role": "user", "content": tool_message})
                 yield json.dumps({'role': 'tool_call', 'content': tool_message}) + "\n"
 
@@ -115,7 +126,7 @@ def inference_loop(messages):
                 tool_result = execute_tool(tool_name, tool_input)
 
                 # Add the tool result as a "user" message in the conversation
-                tool_message = f"Tool result: {tool_result}"
+                tool_message = f"Tool result: ```{tool_result}```"
                 messages.append({"role": "user", "content": tool_message})
                 print(f"Tool executed. Result: {tool_result}")
 

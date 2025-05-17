@@ -10,3 +10,4 @@ Werkzeug==3.0.1
 dashscope
 python-dotenv
 openai
+beautifulsoup4
