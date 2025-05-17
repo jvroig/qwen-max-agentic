@@ -13,17 +13,17 @@ CORS(app)
 
 # Load API Key
 load_dotenv()
-api_key = os.getenv('DASHSCOPE_API_KEY')
-base_url = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
-model_name = "qwen-turbo-latest"
+# api_key = os.getenv('DASHSCOPE_API_KEY')
+# base_url = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+# model_name = "qwen-turbo-latest"
 
 # api_key = "sekrit"
 # base_url = "http://127.0.0.1:8080/v1"
 # model_name = "Qwen/Qwen3-4B"
 
-# api_key   = os.getenv('BEDROCK_PROXY_API_KEY')
-# base_url  = "http://54.255.252.95:8069/api/v1"
-#model_name = "us.amazon.nova-pro-v1:0"
+api_key   = os.getenv('BEDROCK_PROXY_API_KEY')
+base_url  = "http://54.255.252.95:8069/api/v1"
+model_name = "us.amazon.nova-premier-v1:0"
 #model_name = "us.meta.llama3-3-70b-instruct-v1:0"
 
 @app.route('/api/chat', methods=['POST'])
@@ -63,6 +63,7 @@ def inference_loop(messages):
             model=model_name,
             messages=messages,
             stream=True,
+            stop=["[[qwen-tool-end]]"]
         )
 
         # # Extract the assistant's response
@@ -173,18 +174,34 @@ def parse_tool_call(response):
         ValueError: If the tool call format is invalid or cannot be parsed.
     """
     # Define markers for the tool call block
-    start_marker = "[[qwen-tool-start]]"
-    end_marker = "[[qwen-tool-end]]"
+    start_marker_pos = response.find("[[qwen-tool-start]]")
     
     try:
-        # Extract the JSON block between the markers
-        start_index = response.find(start_marker) + len(start_marker)
-        end_index = response.find(end_marker)
-        
-        if start_index == -1 or end_index == -1:
+        if start_marker_pos == -1:
             raise ValueError("Tool call markers not found in the response.")
         
-        tool_call_block = response[start_index:end_index].strip()
+        json_start = response.find("{", start_marker_pos)
+        
+        if json_start == -1:
+            raise ValueError("No JSON object found between tool call markers.")
+        
+        # Find the matching closing curly brace
+        # This handles nested JSON objects properly
+        brace_count = 1
+        json_end = json_start + 1
+        
+        while brace_count > 0:
+            if response[json_end] == '{':
+                brace_count += 1
+            elif response[json_end] == '}':
+                brace_count -= 1
+            json_end += 1
+        
+        if brace_count != 0:
+            raise ValueError("Unbalanced JSON object in tool call.")
+        
+        # Extract the complete JSON object
+        tool_call_block = response[json_start:json_end]
         
         # Parse the JSON content
         tool_call_data = json.loads(tool_call_block)

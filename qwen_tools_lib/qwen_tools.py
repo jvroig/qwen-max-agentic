@@ -221,8 +221,8 @@ def get_tools_format():
 
 When you want to use a tool, make a tool call (no explanations) using this exact format:
 
-```
 [[qwen-tool-start]]
+```
 {
     "name": "tool_name",
     "input": {
@@ -230,8 +230,8 @@ When you want to use a tool, make a tool call (no explanations) using this exact
         "param2": "value2"
     }
 }
-[[qwen-tool-end]]
 ```
+[[qwen-tool-end]]
 
 Note that the triple backticks (```) are part of the format!
 
@@ -239,14 +239,14 @@ Example 1:
 ************************
 User: What is your current working directory?
 Qwen-Max:
-```
 [[qwen-tool-start]]
+```
 {
     "name": "get_cwd",
     "input": ""
 }
-[[qwen-tool-end]]
 ```
+[[qwen-tool-end]]
 **********************
 
 
@@ -254,32 +254,32 @@ Example 2:
 ************************
 User: List the files in your current working directory.
 Qwen-Max:
-```
 [[qwen-tool-start]]
+```
 {
     "name": "list_directory",
     "input": {
         "path": "."
     }
 }
-[[qwen-tool-end]]
 ```
+[[qwen-tool-end]]
 **********************
 
 Example 3:
 ************************
 User: Can you check the syntax of my Python code?
 Qwen-Max:
-```
 [[qwen-tool-start]]
+```
 {
     "name": "python_check_syntax",
     "input": {
         "code": "print('Hello world'"
     }
 }
-[[qwen-tool-end]]
 ```
+[[qwen-tool-end]]
 **********************
 
 Immediately end your response after calling a tool and the final triple backticks.
