@@ -13,18 +13,10 @@ CORS(app)
 
 # Load API Key
 load_dotenv()
-# api_key = os.getenv('DASHSCOPE_API_KEY')
-# base_url = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
-# model_name = "qwen-turbo-latest"
 
-# api_key = "sekrit"
-# base_url = "http://127.0.0.1:8080/v1"
-# model_name = "Qwen/Qwen3-4B"
-
-api_key   = os.getenv('BEDROCK_PROXY_API_KEY')
-base_url  = "http://54.255.252.95:8069/api/v1"
-model_name = "us.amazon.nova-premier-v1:0"
-#model_name = "us.meta.llama3-3-70b-instruct-v1:0"
+api_key    = os.getenv('BEDROCK_PROXY_API_KEY')
+base_url   = os.getenv('BEDROCK_PROXY_BASE_URL')
+model_name = os.getenv('MODEL_NAME')
 
 @app.route('/api/chat', methods=['POST'])
 def query_endpoint():
@@ -32,8 +24,8 @@ def query_endpoint():
         # Parse JSON payload from the request
         payload = request.get_json()
         messages = payload.get('messages', [])
-        temperature = payload.get('temperature', 0.4)
-        max_output_tokens = payload.get('max_output_tokens', 1000)
+        temperature = float(payload.get('temperature', 0.7))
+        max_output_tokens = int(payload.get('max_output_tokens', 1000))
 
         # Format messages (you can replace this with your actual logic)
         data = format_messages(messages)
@@ -43,7 +35,7 @@ def query_endpoint():
 
         # Use a generator to stream responses back to the frontend
         def generate_responses():
-            yield from inference_loop(messages)
+            yield from inference_loop(messages, temperature, max_output_tokens)
 
         # Return a streaming response with the correct content type
         return Response(generate_responses(), content_type='text/event-stream')
@@ -53,7 +45,7 @@ def query_endpoint():
         return {"error": str(e)}, 400
 
 
-def inference_loop(messages):
+def inference_loop(messages, temperature=0.7, max_tokens=1000):
     while True:
         client = OpenAI(
             api_key=api_key,
@@ -63,7 +55,9 @@ def inference_loop(messages):
             model=model_name,
             messages=messages,
             stream=True,
-            stop=["[[qwen-tool-end]]"]
+            stop=["[[qwen-tool-end]]"],
+            temperature=temperature,
+            max_tokens=max_tokens
         )
 
         # # Extract the assistant's response
