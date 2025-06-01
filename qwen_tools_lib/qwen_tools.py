@@ -96,6 +96,14 @@ def get_tools_dict():
                     {"name": "path", "required": True, "type": "string", "description": "path to the directory to delete"}
                 ],
                 "returns": "String - confirmation message indicating success or failure"
+            },
+            "copy_directory": {
+                "description": "Copy a directory and all its contents to a new location",
+                "parameters": [
+                    {"name": "source", "required": True, "type": "string", "description": "path to the source directory to copy"},
+                    {"name": "destination", "required": True, "type": "string", "description": "path where the directory should be copied to"}
+                ],
+                "returns": "String - confirmation message indicating success or failure"
             }
         },
         

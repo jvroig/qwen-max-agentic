@@ -160,3 +160,29 @@ def remove_directory(path):
         return f"Error: Path is not a directory: {path}"
     except Exception as e:
         return f"Error removing directory: {e}"
+
+
+def copy_directory(source, destination):
+    """
+    Copy a directory and all its contents to a new location.
+    
+    Args:
+        source (str): The path to the source directory to copy.
+        destination (str): The path where the directory should be copied to.
+        
+    Returns:
+        str: A confirmation message, or an error message if copying fails.
+    """
+    try:
+        shutil.copytree(source, destination)
+        return f"Directory copied successfully from {source} to {destination}"
+    except FileNotFoundError:
+        return f"Source directory not found: {source}"
+    except PermissionError:
+        return f"Permission denied: Cannot copy from {source} to {destination}"
+    except FileExistsError:
+        return f"Error: Destination directory already exists: {destination}"
+    except NotADirectoryError:
+        return f"Error: Source is not a directory: {source}"
+    except Exception as e:
+        return f"Error copying directory: {e}"
