@@ -1,4 +1,5 @@
 import os
+import shutil
 
 def get_cwd():
     """
@@ -90,3 +91,72 @@ def list_directory(path="."):
         return f"Permission denied: {path}"
     except Exception as e:
         return f"Error listing directory: {e}"
+
+def copy_file(source, destination):
+    """
+    Copy a file from source to destination.
+    
+    Args:
+        source (str): The path to the source file to copy.
+        destination (str): The path where the file should be copied to.
+        
+    Returns:
+        str: A confirmation message, or an error message if copying fails.
+    """
+    try:
+        shutil.copy2(source, destination)
+        return f"File copied successfully from {source} to {destination}"
+    except FileNotFoundError:
+        return f"Source file not found: {source}"
+    except PermissionError:
+        return f"Permission denied: Cannot copy from {source} to {destination}"
+    except shutil.SameFileError:
+        return f"Error: Source and destination are the same file: {source}"
+    except IsADirectoryError:
+        return f"Error: Destination is a directory: {destination}"
+    except Exception as e:
+        return f"Error copying file: {e}"
+
+def remove_file(path):
+    """
+    Remove/delete a single file.
+    
+    Args:
+        path (str): The path to the file to delete.
+        
+    Returns:
+        str: A confirmation message, or an error message if deletion fails.
+    """
+    try:
+        os.remove(path)
+        return f"File removed successfully: {path}"
+    except FileNotFoundError:
+        return f"File not found: {path}"
+    except PermissionError:
+        return f"Permission denied: {path}"
+    except IsADirectoryError:
+        return f"Error: Path is a directory, not a file: {path}"
+    except Exception as e:
+        return f"Error removing file: {e}"
+
+def remove_directory(path):
+    """
+    Remove/delete a directory and all its contents.
+    
+    Args:
+        path (str): The path to the directory to delete.
+        
+    Returns:
+        str: A confirmation message, or an error message if deletion fails.
+    """
+    try:
+        shutil.rmtree(path)
+        return f"Directory removed successfully: {path}"
+    except FileNotFoundError:
+        return f"Directory not found: {path}"
+    except PermissionError:
+        return f"Permission denied: {path}"
+    except NotADirectoryError:
+        return f"Error: Path is not a directory: {path}"
+    except Exception as e:
+        return f"Error removing directory: {e}"

@@ -74,6 +74,28 @@ def get_tools_dict():
                     {"name": "path", "required": False, "type": "string", "description": "path of the directory to list. If not provided, lists the current working directory."}
                 ],
                 "returns": "String - a list of files and directories in the specified path"
+            },
+            "copy_file": {
+                "description": "Copy a file from source to destination",
+                "parameters": [
+                    {"name": "source", "required": True, "type": "string", "description": "path to the source file to copy"},
+                    {"name": "destination", "required": True, "type": "string", "description": "path where the file should be copied to"}
+                ],
+                "returns": "String - confirmation message indicating success or failure"
+            },
+            "remove_file": {
+                "description": "Remove/delete a single file",
+                "parameters": [
+                    {"name": "path", "required": True, "type": "string", "description": "path to the file to delete"}
+                ],
+                "returns": "String - confirmation message indicating success or failure"
+            },
+            "remove_directory": {
+                "description": "Remove/delete a directory and all its contents",
+                "parameters": [
+                    {"name": "path", "required": True, "type": "string", "description": "path to the directory to delete"}
+                ],
+                "returns": "String - confirmation message indicating success or failure"
             }
         },
         

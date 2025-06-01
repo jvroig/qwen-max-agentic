@@ -16,6 +16,8 @@ load_dotenv()
 
 api_key    = os.getenv('BEDROCK_PROXY_API_KEY')
 base_url   = os.getenv('BEDROCK_PROXY_BASE_URL')
+# api_key    = os.getenv('DASHSCOPE_API_KEY')
+# base_url   = os.getenv('DASHSCOPE_BASE_URL')
 model_name = os.getenv('MODEL_NAME')
 
 @app.route('/api/chat', methods=['POST'])
