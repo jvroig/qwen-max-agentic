@@ -14,23 +14,65 @@ def get_cwd():
     except Exception as e:
         return f"Error getting current working directory: {e}"
 
-def read_file(path):
+def read_file(path, enumerate=False, start_line=1, end_line=None, show_repr=False):
     """
-    Read the contents of a file.
+    Read the contents of a file with optional line numbering, range selection, and debug formatting.
     
     Args:
         path (str): The path to the file to read.
+        enumerate (bool): Whether to include line numbers (defaults to False).
+        start_line (int): First line to read, 1-indexed (defaults to 1).
+        end_line (int): Last line to read, 1-indexed, None for all lines (defaults to None).
+        show_repr (bool): Whether to show Python's repr() of each line, revealing whitespace and special characters (defaults to False).
         
     Returns:
-        str: The contents of the file, or an error message if reading fails.
+        str: The contents of the file (potentially formatted), or an error message if reading fails.
     """
     try:
-        with open(path, 'r') as file:
-            return file.read()
+        if not os.path.isfile(path):
+            return f"Not a file: {path}"
+        
+        # Read file contents
+        with open(path, 'r', encoding='utf-8') as file:
+            content = file.read()
+        
+        # Apply filtering if needed
+        if enumerate or start_line > 1 or end_line is not None:
+            lines = content.splitlines()
+            
+            # Apply line range
+            start_idx = max(0, start_line - 1)  # Convert to 0-indexed
+            if end_line is not None:
+                end_idx = min(len(lines), end_line)  # Convert to 0-indexed + 1
+                filtered_lines = lines[start_idx:end_idx]
+            else:
+                filtered_lines = lines[start_idx:]
+            
+            # Format lines
+            if enumerate:
+                if show_repr:
+                    content = "\n".join(f"{i:>6}  {repr(line)}" for i, line in enumerate(filtered_lines, start_line))
+                else:
+                    content = "\n".join(f"{i:>6}  {line}" for i, line in enumerate(filtered_lines, start_line))
+            else:
+                if show_repr:
+                    content = "\n".join(repr(line) for line in filtered_lines)
+                else:
+                    content = "\n".join(filtered_lines)
+        elif show_repr:
+            # Just show repr without line numbers
+            content = "\n".join(repr(line) for line in content.splitlines())
+        
+        return content
+        
     except FileNotFoundError:
         return f"File not found: {path}"
     except PermissionError:
         return f"Permission denied: {path}"
+    except UnicodeDecodeError:
+        return f"Error: Unable to decode file as UTF-8: {path}"
+    except ValueError as e:
+        return f"Value error: {e}"
     except Exception as e:
         return f"Error reading file: {e}"
 

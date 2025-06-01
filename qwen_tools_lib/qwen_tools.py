@@ -47,11 +47,15 @@ def get_tools_dict():
                 "returns": "String - information about the current working directory"
             },
             "read_file": {
-                "description": "Read a file in the filesystem",
+                "description": "Read a file in the filesystem with optional line numbering, range selection, and debug formatting",
                 "parameters": [
-                    {"name": "path", "required": True, "type": "string", "description": "path and filename of the file to read"}
+                    {"name": "path", "required": True, "type": "string", "description": "path and filename of the file to read"},
+                    {"name": "enumerate", "required": False, "type": "boolean", "description": "whether to include line numbers (defaults to False)"},
+                    {"name": "start_line", "required": False, "type": "integer", "description": "first line to read, 1-indexed (defaults to 1)"},
+                    {"name": "end_line", "required": False, "type": "integer", "description": "last line to read, 1-indexed, None for all lines (defaults to None)"},
+                    {"name": "show_repr", "required": False, "type": "boolean", "description": "whether to show Python's repr() of each line, revealing whitespace and special characters (defaults to False)"}
                 ],
-                "returns": "String - the contents of the file specified in `path`"
+                "returns": "String - the contents of the file (potentially formatted with line numbers or repr), or an error message if reading fails"
             },
             "write_file": {
                 "description": "Write content to a file in the filesystem",
