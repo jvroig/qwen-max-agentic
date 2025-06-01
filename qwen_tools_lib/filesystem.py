@@ -186,3 +186,28 @@ def copy_directory(source, destination):
         return f"Error: Source is not a directory: {source}"
     except Exception as e:
         return f"Error copying directory: {e}"
+
+
+def append_file(path, content):
+    """
+    Append content to an existing file.
+    
+    Args:
+        path (str): The path to the file to append to.
+        content (str): The content to append to the file.
+        
+    Returns:
+        str: A confirmation message, or an error message if appending fails.
+    """
+    try:
+        with open(path, 'a') as file:
+            file.write(content)
+        return f"Content appended successfully to: {path}"
+    except FileNotFoundError:
+        return f"File not found: {path}"
+    except PermissionError:
+        return f"Permission denied: {path}"
+    except IsADirectoryError:
+        return f"Error: Path is a directory, not a file: {path}"
+    except Exception as e:
+        return f"Error appending to file: {e}"

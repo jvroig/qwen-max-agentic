@@ -61,6 +61,14 @@ def get_tools_dict():
                 ],
                 "returns": "String - confirmation message indicating success or failure"
             },
+            "append_file": {
+                "description": "Append content to an existing file in the filesystem",
+                "parameters": [
+                    {"name": "path", "required": True, "type": "string", "description": "path and filename of the file to append to"},
+                    {"name": "content", "required": True, "type": "string", "description": "the content to append to the file"}
+                ],
+                "returns": "String - confirmation message indicating success or failure"
+            },
             "create_directory": {
                 "description": "Create a new directory in the filesystem",
                 "parameters": [
