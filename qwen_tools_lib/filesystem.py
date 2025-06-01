@@ -1,5 +1,6 @@
 import os
 import shutil
+import difflib
 
 def get_cwd():
     """
@@ -211,3 +212,68 @@ def append_file(path, content):
         return f"Error: Path is a directory, not a file: {path}"
     except Exception as e:
         return f"Error appending to file: {e}"
+
+
+def edit_file(path, old_text, new_text, dry_run=False):
+    """
+    Make a line-based edit to a file by replacing old_text with new_text.
+    The old_text must appear exactly once in the file for safety.
+    
+    Args:
+        path (str): The path to the file to edit.
+        old_text (str): Text to be replaced (must match exactly once).
+        new_text (str): Replacement text.
+        dry_run (bool): If True, just return the diff without making changes.
+        
+    Returns:
+        str: A confirmation message with diff, or an error message if editing fails.
+    """
+    try:
+        # Check if file exists and is actually a file
+        if not os.path.isfile(path):
+            return f"Error: Not a file: {path}"
+        
+        # Read current content
+        with open(path, 'r', encoding='utf-8') as f:
+            original_content = f.read()
+        
+        # Make a copy for modifications
+        modified_content = original_content
+        
+        # Ensure old_text appears exactly once
+        if old_text not in modified_content:
+            return f"Edit failed: Could not find text '{old_text}' in file"
+        
+        if modified_content.count(old_text) > 1:
+            return f"Edit failed: Text '{old_text}' appears multiple times in file, but this tool only works with exactly one match."
+        
+        # Replace text
+        modified_content = modified_content.replace(old_text, new_text)
+        
+        # Generate diff
+        original_lines = original_content.splitlines(keepends=True)
+        modified_lines = modified_content.splitlines(keepends=True)
+        
+        diff = ''.join(difflib.unified_diff(
+            original_lines, 
+            modified_lines,
+            fromfile=f'a/{path}',
+            tofile=f'b/{path}',
+            n=3
+        ))
+        
+        # Apply changes if not a dry run
+        if not dry_run:
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(modified_content)
+            
+            return f"Successfully edited file: {path}\\n\\nDiff:\\n{diff}"
+        else:
+            return f"Dry run: Changes not applied to {path}\\n\\nDiff:\\n{diff}"
+            
+    except PermissionError:
+        return f"Permission denied: {path}"
+    except UnicodeDecodeError:
+        return f"Error: Unable to decode file as UTF-8: {path}"
+    except Exception as e:
+        return f"Error editing file: {e}"

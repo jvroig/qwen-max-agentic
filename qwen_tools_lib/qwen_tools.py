@@ -69,6 +69,16 @@ def get_tools_dict():
                 ],
                 "returns": "String - confirmation message indicating success or failure"
             },
+            "edit_file": {
+                "description": "Make a line-based edit to a file by replacing old_text with new_text. The old_text must appear exactly once in the file for safety.",
+                "parameters": [
+                    {"name": "path", "required": True, "type": "string", "description": "path and filename of the file to edit"},
+                    {"name": "old_text", "required": True, "type": "string", "description": "text to be replaced (must match exactly once)"},
+                    {"name": "new_text", "required": True, "type": "string", "description": "replacement text"},
+                    {"name": "dry_run", "required": False, "type": "boolean", "description": "if True, just return the diff without making changes (defaults to False)"}
+                ],
+                "returns": "String - confirmation message with diff showing changes, or error message if editing fails"
+            },
             "create_directory": {
                 "description": "Create a new directory in the filesystem",
                 "parameters": [
