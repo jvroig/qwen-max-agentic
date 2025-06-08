@@ -250,4 +250,4 @@ def execute_tool(tool_name, tool_input):
         raise ValueError(f"Error executing tool '{tool_name}': {e}")
 
 if __name__ == '__main__':
-    app.run(debug=True, port="5001")
+    app.run(debug=True, port="5002")
